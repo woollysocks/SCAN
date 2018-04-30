@@ -24,7 +24,7 @@ def load_data(path):
 
     return examples
 
-def build_dictionary(dataset):
+def indexify_and_build_dictionary(dataset):
     """
     Hot mess code. Fix this. Make into class, or at least add an attribute for in vs out.
     """
@@ -70,13 +70,17 @@ def build_dictionary(dataset):
 
     return (in_word2index, in_index2word, in_vocabulary), (out_word2index, out_index2word, out_vocabulary)
 
-def paddify(batch):
+def paddify(batch, eval=False):
     PAD = 2
     inputs = [batch[i]["in_index"] for i in range(len(batch))]
     in_max_len = len(max(inputs, key=len))
 
     outs = [batch[i]["out_index"] for i in range(len(batch))]
-    out_max_len = len(max(outs, key=len))
+    
+    if eval:
+        out_max_len = 49
+    else:
+        out_max_len = len(max(outs, key=len))
     
     for i, example in enumerate(batch):
         in_this_len = len(batch[i]["in_index"])
@@ -120,8 +124,10 @@ def eval_iter(source, batch_size):
     while start < dataset_size - batch_size:
         start += batch_size
         batch_indices = order[start:start + batch_size]
-        batch = [source[index] for index in batch_indices]
-        batch = paddify(batch)
+        batch = [{"in_index": source[index]["in_index"], \
+                 "out_index":source[index]["out_index"]} \
+                 for index in batch_indices]
+        batch = paddify(batch, eval=True)
         if len(batch) == batch_size:
             batches.append(batch)
         else:
